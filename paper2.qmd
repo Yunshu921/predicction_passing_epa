@@ -1,0 +1,44 @@
+---
+title: "Predition"
+author: "Yunshu Zhang"
+format: pdf
+thanks: "Code and data are available at: https://github.com/Yunshu921/predicction_passing_epa.git."
+date: today
+date-format: long
+editor: visual
+toc: TRUE
+number-sections: true
+
+---
+
+```{r setup, include=FALSE}
+#install.packages("nflreadr")
+# Load libraries
+library(tidyr)
+library(dplyr)
+library(caret)
+library(nflreadr)
+setwd("/cloud/project")
+
+
+# Read data
+qb_regular_season_stats <- 
+  load_player_stats(seasons = TRUE) |> 
+  filter(season_type == "REG" & position == "QB")
+
+qb_regular_season_stats
+
+qb_data <- qb_regular_season_stats %>%
+  filter(position == "QB", week <= 14, season == 2023 )
+```
+
+
+```{r, include=FALSE}
+train_data <- qb_data %>%
+  select(rushing_yards, carries, rushing_yards) %>%
+  no.omit()
+
+set.seed(673)
+
+```
+
