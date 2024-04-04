@@ -1,0 +1,83 @@
+---
+title: "Predition on total expected points added on pass attempts and sacks"
+author: "Yunshu Zhang"
+format: pdf
+thanks: "Code and data are available at: https://github.com/Yunshu921/predicction_passing_epa.git."
+date: today
+date-format: long
+editor: visual
+toc: TRUE
+number-sections: true
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+
+# Load libraries
+library(tidyr)
+library(dplyr)
+library(caret)
+library(nflreadr)
+library(modelsummary)
+
+
+# Read data
+qb_regular_season_stats <- 
+  load_player_stats(seasons = TRUE) |> 
+  filter(season_type == "REG" & position == "QB")
+
+qb_regular_season_stats
+# Select data we interested
+qb_data <- qb_regular_season_stats %>%
+  filter(position == "QB", week <= 14, season == 2023 )
+```
+# Introduction
+
+Rugby is a popular worldwide sport that has a sizable following across many different countries and regions. What's more, rugby is one of the most famous sports in the world because of its elite professional league, thrilling international competitions, and inclusion on the Olympic Games schedule. One thing need to mention is that rugby's growth and popularity have enhanced not only the sporting culture but also worldwide cooperation and exchanges while igniting people's passion and providing limitless enjoyment.
+
+By Niko's [@rugby] article, we realized that in various regions of the world, sports migration has gained significant importance on a number of levels. Even though there is very little chance of success in the sports industry, children and young people in many Global South societies are drawn to success stories in the media and increasingly define their future in terms of the possibility of becoming professional rugby players, baseball players, or transnational football players. For the United States, football has always been a high-profile sport, and in this historical context we focus our attention on the use of mathematical statistical tools to predict sporting events. Specifically, we use `nflreadr` [@nfl] to predict the total score of the NFL in the 2023 WEEK 14.
+
+```{r, include=FALSE}
+# Load required packages
+library(caret)
+
+# Remove rows with missing values
+train_data <- qb_data %>%
+  select(rushing_yards, carries, rushing_yards, passing_epa) %>%
+  na.omit()
+
+# Separate the data into two parts: training and test dataset
+set.seed(673)
+training_index <- createDataPartition(train_data$passing_epa, p = 0.8, list = FALSE)
+train_set <- train_data[training_index,]
+test_set <- train_data[-training_index,]
+
+# Train the model
+model <- lm(passing_epa ~ carries + rushing_yards, data = train_set)
+
+# Validate the model
+predictions <- predict(model, newdata = test_set)
+predictions
+
+validation_rmse <- sqrt(mean((predictions - test_set$passing_epa)^2))
+
+
+```
+
+# Model
+We can write down our model equation as following.
+$$
+Y = β_{0} + β_{1} \times X_{1} + β_{2} \times X_{2} + \epsilon
+$$
+where:
+
+-   $Y$ is the total expected points added on pass attempts and sacks.
+-   $β_{0}$ is the intercept which means the total expected points without any rush attempts and yards which is -1.447.
+-   $β_{1}$ is the amount of point changed for one rush attempt which is 0.695.
+-   $β_{2}$ is the amount of point changed for one yard which is -0.096.
+-   $X_{1}$ is the number of official rush attempts (incl. scrambles and kneel downs). Rushes after a lateral reception don't count as carry.
+-   $X_{2}$ are yards gained when rushing with the ball (incl. scrambles and kneel downs). Also includes yards gained after obtaining a lateral on a play that started with a rushing attempt.
+-   $\epsilon$ represents the error term
+
+
+
